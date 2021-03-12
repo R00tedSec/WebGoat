@@ -2,6 +2,8 @@ package org.owasp.webgoat.path_traversal;
 
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
+
+import org.jruby.RubyProcess.Sys;
 import org.owasp.webgoat.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.assignments.AttackResult;
 import org.owasp.webgoat.session.WebSession;
@@ -39,12 +41,18 @@ public class ProfileUploadBase extends AssignmentEndpoint {
         try {
             uploadDirectory.mkdirs();
             var uploadedFile = new File(uploadDirectory, fullName);
-            uploadedFile.createNewFile();
-            FileCopyUtils.copy(file.getBytes(), uploadedFile);
 
-            if (attemptWasMade(uploadDirectory, uploadedFile)) {
-                return solvedIt(uploadedFile);
+            if(uploadedFile.getAbsolutePath().equals(uploadedFile.getCanonicalPath())){
+                uploadedFile.createNewFile();
+                FileCopyUtils.copy(file.getBytes(), uploadedFile);
+                if (attemptWasMade(uploadDirectory, uploadedFile)) {
+                    return solvedIt(uploadedFile);
+                }
+            }else{
+                return informationMessage(this).feedback("path-traversal-profile-updated").feedbackArgs("Intento de ataque Path Traversal!").build();
             }
+
+           
             return informationMessage(this).feedback("path-traversal-profile-updated").feedbackArgs(uploadedFile.getAbsoluteFile()).build();
 
         } catch (IOException e) {
